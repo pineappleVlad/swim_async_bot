@@ -24,10 +24,10 @@ async def main():
     dp.callback_query.register(booking_cancel_choose, F.data.startswith('booking_delete'), MainStates.menu_open)
     dp.callback_query.register(back_button_callback, F.data.startswith('back'))
 
-    dp.callback_query.register(booking_info_confirm, F.data.startswith('training_add_1'), MainStates.choose_training_date)
+    dp.callback_query.register(booking_info_confirm, MainStates.choose_training_date)
     dp.callback_query.register(booking_accept, F.data.startswith('confirm_training'), MainStates.confirm_booking)
 
-    dp.callback_query.register(booking_cancel_info, F.data.startswith('training_del_1'), MainStates.booking_cancel_choose)
+    dp.callback_query.register(booking_cancel_info, MainStates.booking_cancel_choose)
     dp.callback_query.register(booking_cancel_confirm, F.data.startswith('booking_cancel'), MainStates.booking_cancel_confirm)
 
 

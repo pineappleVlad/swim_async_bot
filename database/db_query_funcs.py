@@ -1,7 +1,8 @@
 import asyncio
 import datetime
-from database.db_connection import execute_query
+from database.db_connection import execute_query, execute_query_training_register
 from utils.info_validation import months_ru
+import datetime
 
 async def fio_check(name):
     query = "SELECT name FROM backend_child WHERE name = $1"
@@ -108,22 +109,61 @@ async def get_trainings_list(child_name):
         formatted_result.append(formatted_record)
     return formatted_result
 
+async def child_training_register(child_name, date_value, time_value):
+    child_balance = await get_child_balance(child_name)
+    if child_balance[0]['paid_training_count'] == 0:
+        return False
+    else:
+        query_balance = """
+        UPDATE backend_child
+        SET paid_training_count = paid_training_count - 1
+        WHERE name = $1 AND paid_training_count > 0;
+        """
+        await execute_query_training_register(query_balance, (child_name,))
 
+        query_child_register = """
+        INSERT INTO backend_training_children (training_id, child_id)
+        VALUES (
+            (SELECT id FROM backend_training WHERE date = $1
+            AND EXTRACT(HOUR FROM time) = EXTRACT(HOUR FROM $2::time)
+            AND EXTRACT(MINUTE FROM time) = EXTRACT(MINUTE FROM $2::time)),
+            (SELECT id FROM backend_child WHERE name = $3)
+        )
+        """
+        result = await execute_query_training_register(query_child_register, [date_value, time_value, child_name])
+        return bool(result)
 
+async def child_training_register_delete(child_name, date_value, time_value):
+    query_balance = """
+    UPDATE backend_child
+    SET paid_training_count = paid_training_count + 1
+    WHERE name = $1;
+    """
+    await execute_query_training_register(query_balance, (child_name,))
+
+    query_child_register = """
+    DELETE FROM backend_training_children
+    WHERE training_id = (
+        SELECT id FROM backend_training 
+        WHERE date = $1 
+        AND EXTRACT(HOUR FROM time) = EXTRACT(HOUR FROM $2::time) 
+        AND EXTRACT(MINUTE FROM time) = EXTRACT(MINUTE FROM $2::time)
+    ) 
+    AND child_id = (
+        SELECT id FROM backend_child WHERE name = $3
+    )
+    """
+    result = await execute_query_training_register(query_child_register, [date_value, time_value, child_name])
+    return bool(result)
 
 async def view_all():
-    query = "SELECT * FROM backend_child"
-    result = await execute_query(query)
-    for row in result:
-        print(row)
-
-
-async def table_clear():
     query = """
-    DELETE FROM backend_childid;
+    SELECT * FROM backend_child;
     """
     result = await execute_query(query)
+    print(result)
 
-# asyncio.run(table_clear())
+
+
 # asyncio.run(view_all())
 

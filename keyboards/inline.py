@@ -17,7 +17,7 @@ def back_button():
     return keyboard_builder.as_markup()
 
 
-def trainig_booking_keyboard(trainings_list):
+def training_booking_keyboard(trainings_list):
     keyboard_builder = InlineKeyboardBuilder()
     for training in trainings_list:
         keyboard_builder.button(text=training, callback_data=training)
@@ -26,7 +26,7 @@ def trainig_booking_keyboard(trainings_list):
     return keyboard_builder.as_markup()
 
 
-def trainig_booking_confirm_keyboard():
+def training_booking_confirm_keyboard():
     keyboard_builder = InlineKeyboardBuilder()
     keyboard_builder.button(text='Записаться', callback_data='confirm_training')
     keyboard_builder.button(text='Назад', callback_data='back')
@@ -38,11 +38,12 @@ def booking_accept_keyboard():
     keyboard_builder.button(text='Назад в меню', callback_data='back')
     return keyboard_builder.as_markup()
 
-def booking_cancel_choose_keyboard():
+def booking_cancel_choose_keyboard(trainings_list):
     keyboard_builder = InlineKeyboardBuilder()
-    keyboard_builder.button(text='Тренировка1', callback_data='training_del_1')
+    for training in trainings_list:
+        keyboard_builder.button(text=training, callback_data=training)
     keyboard_builder.button(text='Назад', callback_data='back')
-    keyboard_builder.adjust(1, 1)
+    keyboard_builder.adjust(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
     return keyboard_builder.as_markup()
 
 

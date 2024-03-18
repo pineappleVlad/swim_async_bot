@@ -1,11 +1,12 @@
 from aiogram import Bot
 from aiogram.fsm import state
-from database.db_query_funcs import child_name_id_write, get_child_balance, get_child_name, get_child_trainings, get_trainings_list
+from database.db_query_funcs import child_name_id_write, get_child_balance, get_child_name, get_child_trainings, get_trainings_list, child_training_register, child_training_register_delete
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from keyboards.inline import back_button, trainig_booking_keyboard, trainig_booking_confirm_keyboard, booking_accept_keyboard, booking_cancel_choose_keyboard, booking_cancel_info_keyboard
+from keyboards.inline import back_button, training_booking_keyboard, training_booking_confirm_keyboard, booking_accept_keyboard, booking_cancel_choose_keyboard, booking_cancel_info_keyboard
 from handlers.basic import main_menu_handler
 from utils.states import MainStates
+from utils.info_validation import valid_training_date_check, valid_training_message_text
 
 async def current_child_save(call: CallbackQuery, bot: Bot, state: FSMContext):
     child_name = call.data
@@ -58,41 +59,65 @@ async def training_booking(call: CallbackQuery, bot: Bot, state: FSMContext):
         text += f"{training['date']} "
         text += f"{training['time']} "
         trainings_list.append(text)
-    await call.message.answer(text='Выберите тренировку из списка', reply_markup=trainig_booking_keyboard(trainings_list))
+    await call.message.answer(text='Выберите тренировку из списка', reply_markup=training_booking_keyboard(trainings_list))
     await call.message.delete()
 
 
 async def booking_info_confirm(call: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.confirm_booking)
-    info = ''
-    await call.message.answer(text=f'Полная информация по тренировке \n'
-                                   f'{info}', reply_markup=trainig_booking_confirm_keyboard())
+    child_name = await get_child_name(call.message.chat.id, table_name='backend_childid')
+    trainings_list_of_dict = await get_trainings_list(child_name)
+    text = valid_training_date_check(call.data, trainings_list_of_dict)
+    await call.message.answer(text=f'Полная информация по тренировке: \n \n'
+                                   f'{text}', reply_markup=training_booking_confirm_keyboard())
     await call.message.delete()
 
 
 async def booking_accept(call: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.booking_accept)
-    info = ''
-    await call.message.answer(text=f'Вы успешно записаны на тренировку \n'
-                                   f'{info}',
-                              reply_markup=booking_accept_keyboard())
-    await call.message.delete()
+    child_name = await get_child_name(call.message.chat.id, table_name='backend_childid')
+    date_value, time_value = valid_training_message_text(call.message.text)
+    res = await child_training_register(child_name, date_value, time_value)
+    if res:
+        await call.message.answer(text=f'Вы успешно записаны на тренировку \n'
+                                       f'{call.message.text}', reply_markup=booking_accept_keyboard())
+        await call.message.delete()
+    else:
+        await call.message.answer(text=f'Пополните баланс тренировок \n', reply_markup=booking_accept_keyboard())
+        await call.message.delete()
 
 
 async def booking_cancel_choose(call: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.booking_cancel_choose)
-    await call.message.answer(text='Выберите тренировку из списка', reply_markup=booking_cancel_choose_keyboard())
+    child_name = await get_child_name(call.message.chat.id, table_name='backend_childid')
+    trainings_info = await get_child_trainings(child_name)
+    trainings_list = []
+    for training in trainings_info:
+        text = ''
+        text += f"{training['date']} "
+        text += f"{training['time']} "
+        trainings_list.append(text)
+    await call.message.answer(text='Выберите тренировку из списка', reply_markup=booking_cancel_choose_keyboard(trainings_list))
     await call.message.delete()
 
 
 async def booking_cancel_info(call: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.booking_cancel_confirm)
-    info = ''
+    child_name = await get_child_name(call.message.chat.id, table_name='backend_childid')
+    trainings_list_of_dict = await get_child_trainings(child_name)
+    info = valid_training_date_check(call.data, trainings_list_of_dict)
     await call.message.answer(text=f'Полная информация по тренировке \n'
                                    f'{info}', reply_markup=booking_cancel_info_keyboard())
     await call.message.delete()
 
 async def booking_cancel_confirm(call: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.booking_cancel_result)
-    await call.message.answer(text='Запись успешно удалена', reply_markup=booking_accept_keyboard())
-    await call.message.delete()
+    child_name = await get_child_name(call.message.chat.id, table_name='backend_childid')
+    date_value, time_value = valid_training_message_text(call.message.text)
+    res = await child_training_register_delete(child_name, date_value, time_value)
+    if res:
+        await call.message.answer(text='Запись успешно удалена', reply_markup=booking_accept_keyboard())
+        await call.message.delete()
+    else:
+        await call.message.answer(text='Неизвестная ошибка', reply_markup=booking_accept_keyboard())
+        await call.message.delete()

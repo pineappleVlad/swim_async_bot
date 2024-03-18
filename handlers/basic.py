@@ -12,6 +12,11 @@ async def start(message: Message, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.enter_child_name)
     await set_commands(bot)
     id_check = await parent_exists(message.chat.id)
+    try:
+        await bot.delete_message(message.chat.id, message.message_id - 1)  # Удаление предыдущего сообщения
+    except Exception as e:
+        print(f"Ошибка при удалении сообщения: {e}")
+
     if not id_check:
         await message.answer(text=f'Введите ФИО ребенка \n \n'
                                   f'Обязательно в формате: \n'
@@ -24,6 +29,10 @@ async def start(message: Message, bot: Bot, state: FSMContext):
 
 async def cancel(message: Message, bot: Bot, state: FSMContext):
     await state.set_state(MainStates.enter_child_name)
+    try:
+        await bot.delete_message(message.chat.id, message.message_id - 1)  # Удаление предыдущего сообщения
+    except Exception as e:
+        print(f"Ошибка при удалении сообщения: {e}")
     await message.answer(text=f'Введите ФИО ребенка \n \n'
                         f'Обязательно в формате: \n'
                         f'Иванов Иван Иванович')

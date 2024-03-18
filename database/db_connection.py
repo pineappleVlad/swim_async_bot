@@ -25,3 +25,16 @@ async def execute_query(query, params=None):
         return result
     finally:
         await close_db(connection)
+
+
+
+async def execute_query_training_register(query, params=None):
+    connection = await connect_to_db()
+    try:
+        if params:
+            result = await connection.execute(query, *params)
+        else:
+            result = await connection.execute(query)
+        return result
+    finally:
+        await close_db(connection)
