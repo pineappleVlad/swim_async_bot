@@ -16,8 +16,8 @@ months_ru = {
 }
 
 
-def valid_training_date_check(date_time_string, trainings_list_of_dict):
-    date_time_list = date_time_string.split()
+def valid_training_date_check(trainer_time_string, trainings_list_of_dict):
+    date_time_list = trainer_time_string.split()
     date = date_time_list[0] + " " + date_time_list[1] + " " + date_time_list[2]
     time = date_time_list[3]
     text = ''
@@ -29,6 +29,20 @@ def valid_training_date_check(date_time_string, trainings_list_of_dict):
             text += f"Тренер: {training['trainer_name']}"
     return text
 
+def valid_training_date_check_booking(trainer_time_string, trainings_list_of_dict):
+    date_time_list = trainer_time_string.split()
+    time = date_time_list[0]
+    surname = date_time_list[1]
+    pool_type = date_time_list[4] + " " + date_time_list[5]
+    text = ''
+    for training in trainings_list_of_dict:
+        surname_dict = training["trainer_name"].split()[0]
+        if (training["time"] == time) and (training["pool_type"] == pool_type) and (surname == surname_dict):
+            text += f"Дата: {training['date']} \n"
+            text += f"Время: {training['time']} \n"
+            text += f"Тип бассейна: {training['pool_type']} \n"
+            text += f"Тренер: {training['trainer_name']}"
+    return text
 
 def valid_training_message_text(text_message):
     text_list = text_message.split("\n")
@@ -48,3 +62,12 @@ def valid_training_message_text(text_message):
     time_obj = datetime.strptime(time_str, "%H:%M")
     time_result = time_obj.time()
     return date_result, time_result
+
+def valid_training_message_date(date):
+    for en_month, ru_month in months_ru.items():
+        if ru_month in date:
+            date = date.replace(ru_month, en_month).strip()
+            break
+    date_obj = datetime.strptime(date, "%d %B %Yг.")
+    date_result = date_obj.date()
+    return date_result
